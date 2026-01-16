@@ -8,6 +8,8 @@ import android.os.Build;
 import android.provider.Settings;
 import android.net.Uri;
 import android.util.Log;
+
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 public class AlarmScheduler {
@@ -51,21 +53,34 @@ public class AlarmScheduler {
         }
         }
         public void schedulerAlarmAtTime(Context context, int timePickerStateInHours, int timePickerStateInMinutes){
-        Calendar targetTimeForAlarms = Calendar.getInstance();
         Calendar currentTimeForAlarms = Calendar.getInstance();
+        Calendar targetTimeForAlarms = Calendar.getInstance();
 
         targetTimeForAlarms.set(Calendar.HOUR_OF_DAY, timePickerStateInHours);
         targetTimeForAlarms.set(Calendar.MINUTE, timePickerStateInMinutes);
         targetTimeForAlarms.set(Calendar.SECOND, 0);
         targetTimeForAlarms.set(Calendar.MILLISECOND, 0);
 
-
         if(currentTimeForAlarms.after(targetTimeForAlarms)){
             targetTimeForAlarms.add(Calendar.DATE, 1);
         }
+
         long targetTimeForAlarmsInMillis = targetTimeForAlarms.getTimeInMillis();
         schedulerAlarm(context, targetTimeForAlarmsInMillis );
     }
 
-//    public void schedulerAlarmAtTimeInMillis(Context context, int timePickerStateInHours, int timePickerStateInMinutes)
+    public String dateTransfer(int timePickerStateInHours, int timePickerStateInMinutes ){
+        Calendar targetTimeForAlarms = Calendar.getInstance();
+
+        targetTimeForAlarms.set(Calendar.HOUR_OF_DAY, timePickerStateInHours);
+        targetTimeForAlarms.set(Calendar.MINUTE, timePickerStateInMinutes);
+
+        if(Calendar.getInstance().after(targetTimeForAlarms)){
+            targetTimeForAlarms.add(Calendar.DATE, 1);
+        }
+
+        java.text.SimpleDateFormat sdf = new SimpleDateFormat("EEEE, d MMM", java.util.Locale.getDefault());
+
+        return sdf.format(targetTimeForAlarms.getTime());
+    }
 }
