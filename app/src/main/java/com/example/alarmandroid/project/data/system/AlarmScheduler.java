@@ -9,8 +9,12 @@ import android.provider.Settings;
 import android.net.Uri;
 import android.util.Log;
 
+import com.example.alarmandroid.project.data.models.AlarmType;
+
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
 import java.util.Calendar;
+import java.util.Set;
 
 public class AlarmScheduler {
     private static final String TAG = "AlarmScheduler";
@@ -52,35 +56,52 @@ public class AlarmScheduler {
             alarmManager.set(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent);
         }
         }
-        public void schedulerAlarmAtTime(Context context, int timePickerStateInHours, int timePickerStateInMinutes){
-        Calendar currentTimeForAlarms = Calendar.getInstance();
-        Calendar targetTimeForAlarms = Calendar.getInstance();
+        public void schedulerAlarmAtTime(Context context, int timePickerStateInHours, int timePickerStateInMinutes, Set<DayOfWeek> dayOfWeek, AlarmType type){
+        Calendar currentTime = Calendar.getInstance();
+        Calendar targetTime = Calendar.getInstance();
 
-        targetTimeForAlarms.set(Calendar.HOUR_OF_DAY, timePickerStateInHours);
-        targetTimeForAlarms.set(Calendar.MINUTE, timePickerStateInMinutes);
-        targetTimeForAlarms.set(Calendar.SECOND, 0);
-        targetTimeForAlarms.set(Calendar.MILLISECOND, 0);
+        targetTime.set(Calendar.HOUR_OF_DAY, timePickerStateInHours);
+        targetTime.set(Calendar.MINUTE, timePickerStateInMinutes);
+        targetTime.set(Calendar.SECOND, 0);
+        targetTime.set(Calendar.MILLISECOND, 0);
 
-        if(currentTimeForAlarms.after(targetTimeForAlarms)){
-            targetTimeForAlarms.add(Calendar.DATE, 1);
+        if(dayOfWeek == null || dayOfWeek.isEmpty() || type == AlarmType.ONCE){
+            if (targetTime.before(currentTime)){
+                targetTime.add(Calendar.DATE, 1);
+            }
+            schedulerAlarm(context, targetTime.getTimeInMillis());
+        } else {
+                long clossestTime = Long.MAX_VALUE;
+
+                for(DayOfWeek day : dayOfWeek){
+                    Calendar tempTarget = (Calendar) targetTime.clone();
+                    tempTarget.set(Calendar.DAY_OF_WEEK, day.getValue());
+
+                    if (tempTarget.before(currentTime)){
+                        tempTarget.add(Calendar.WEEK_OF_YEAR, 1);
+                }
+                    long timeInMillis = tempTarget.getTimeInMillis();
+                    if (timeInMillis < clossestTime){clossestTime = timeInMillis;
+                    }
+                }
+                schedulerAlarm(context, clossestTime);
         }
-
-        long targetTimeForAlarmsInMillis = targetTimeForAlarms.getTimeInMillis();
-        schedulerAlarm(context, targetTimeForAlarmsInMillis );
     }
 
-    public String dateTransfer(int timePickerStateInHours, int timePickerStateInMinutes ){
+    public String dateTransfer(int timePickerStateInHours, int timePickerStateInMinutes){
         Calendar targetTimeForAlarms = Calendar.getInstance();
 
         targetTimeForAlarms.set(Calendar.HOUR_OF_DAY, timePickerStateInHours);
         targetTimeForAlarms.set(Calendar.MINUTE, timePickerStateInMinutes);
 
-        if(Calendar.getInstance().after(targetTimeForAlarms)){
-            targetTimeForAlarms.add(Calendar.DATE, 1);
-        }
+        String today = "Today-";
 
+        if(Calendar.getInstance().after(targetTimeForAlarms)) {
+            targetTimeForAlarms.add(Calendar.DATE, 1);
+            today = "Tomorrow-";
+        }
         java.text.SimpleDateFormat sdf = new SimpleDateFormat("EEEE, d MMM", java.util.Locale.getDefault());
 
-        return sdf.format(targetTimeForAlarms.getTime());
+        return today + sdf.format(targetTimeForAlarms.getTime());
     }
 }

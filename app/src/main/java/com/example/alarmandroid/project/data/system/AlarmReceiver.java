@@ -16,6 +16,10 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        Intent soundPlayerIntent = new Intent(context, AlarmReceiver.class);
+
+
+
         Log.d(TAG,"Work");
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager == null){Log.w("TAG","Notification Manager is null"); return;}
@@ -27,7 +31,10 @@ public class AlarmReceiver extends BroadcastReceiver {
                     NotificationManager.IMPORTANCE_HIGH
             );
             notificationManager.createNotificationChannel(channel);
-    }
+            context.startForegroundService(soundPlayerIntent);
+    }else{
+            context.startService(soundPlayerIntent);
+        }
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
                 .setContentTitle("Alarm")
@@ -37,6 +44,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         Notification notification = builder.build();
         notificationManager.notify(1, notification);
+
     }
 }
 
