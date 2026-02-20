@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface AlarmDao {
 @Query("SELECT * FROM alarms")
-suspend fun getAllAlarms(): Flow<List<AlarmInfo>>
+fun getAllAlarms(): Flow<List<AlarmInfo>>
 
 @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAlarm(alarm: AlarmInfo)

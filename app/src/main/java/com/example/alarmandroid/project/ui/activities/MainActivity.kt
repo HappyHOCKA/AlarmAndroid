@@ -5,9 +5,6 @@ package com.example.alarmandroid.project.ui.activeties
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.pdf.models.ListItem
-import android.icu.util.Calendar
-import android.media.Ringtone
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -24,9 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -38,7 +33,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,12 +44,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -82,11 +72,18 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.graphics.Color
+import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonGroup
+import com.example.alarmandroid.project.data.local.dao.AlarmDao
+import com.example.alarmandroid.project.data.local.db.AppDatabase
 import java.time.DayOfWeek
 import com.example.alarmandroid.project.data.local.entities.AlarmInfo
 import com.example.alarmandroid.project.data.models.AlarmType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -110,7 +107,14 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            AlarmSchedulerScreen()
+           var isDarkMode by remember { mutableStateOf(true) }
+            AlarmAndroidTheme(isDarkMode) {
+                val coroutineScope = rememberCoroutineScope()
+                val context = LocalContext.current
+                val db = AppDatabase.getDatabase(context)
+                val alarmDao = db.alarmDao()
+            AlarmSchedulerApp(alarmDao, coroutineScope, isDarkMode) {isDarkMode = it}
+            }
         }
     }
 
@@ -126,20 +130,18 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun AlarmSchedulerScreen() {
-        var isDarkMode by remember { mutableStateOf(true) }
-
-        AlarmAndroidTheme(isDarkMode) {
+    fun AlarmSchedulerApp(
+        alarmDao: AlarmDao,
+        coroutineScope: CoroutineScope,
+        isDarkMode: Boolean,
+        onToggle: (Boolean) -> Unit
+    ) {
             val scheduler = AlarmScheduler()
             val context = LocalContext.current
             val navController = rememberNavController()
-            val scrollState = rememberScrollState()
-            val scope = rememberCoroutineScope()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
-
-            var AlarmList = remember { mutableStateListOf<AlarmInfo>() }
-
+        val alarmList by alarmDao.getAllAlarms().collectAsState(initial = emptyList())
 
             Scaffold(
                 floatingActionButton = {
@@ -179,16 +181,16 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.padding(innerPadding)
                 ) {
                     composable("alarms") {
-                        AlarmSchedulerContent(innerPadding, scheduler, context, AlarmList)
+                        AlarmSchedulerContent(innerPadding, coroutineScope, alarmDao,alarmList )
                     }
                     composable("scheduler") {
                         SchedulerScreen(innerPadding)
                     }
                     composable("settings") {
-                        SettingsScreen(innerPadding, isDarkMode, onToggle = { isDarkMode = it })
+                        SettingsScreen(innerPadding, isDarkMode, onToggle = onToggle)
                     }
                     composable("create_new_alarm") {
-                        ScrollableTimePicker(innerPadding, AlarmList, navController)
+                        ScrollableTimePicker(innerPadding, alarmList, navController, alarmDao, coroutineScope)
                     }
                 }
             }
@@ -196,7 +198,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun AlarmSchedulerContent(innerPadding: PaddingValues, scheduler: AlarmScheduler, context: Context, alarmList: SnapshotStateList<AlarmInfo>) {
+    fun AlarmSchedulerContent(innerPadding: PaddingValues, coroutineScope: CoroutineScope, alarmDao: AlarmDao, alarmList: List<AlarmInfo>) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -275,7 +277,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun ScrollableTimePicker(innerPadding: PaddingValues, alarmList: SnapshotStateList<AlarmInfo>, navController: NavController) {
+    fun ScrollableTimePicker(innerPadding: PaddingValues, alarmList: List<AlarmInfo>, navController: NavController, alarmDao: AlarmDao, coroutineScope: CoroutineScope) {
         val context = LocalContext.current
         val scheduler = AlarmScheduler()
         val scrollState = rememberScrollState()
@@ -455,7 +457,12 @@ Column(
                 val date = scheduler.dateTransfer(selectedHour, selectedMinute)
                 val formattedTime = String.format("%02d:%02d", selectedHour, selectedMinute)
 
-                alarmList.add(AlarmInfo( time = formattedTime, date = date  ))
+                val newAlarm = AlarmInfo(
+                    time = formattedTime,
+                    date = date,
+                )
+
+                coroutineScope.launch { alarmDao.insertAlarm(newAlarm) }
 
                 navController.popBackStack()
             }
@@ -482,4 +489,3 @@ Column(
             }
         }
     }
-}

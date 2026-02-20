@@ -17,4 +17,17 @@ class typeConvertors {
             AlarmType.ONCE
         }
     }
+
+    @TypeConverter
+    fun SetIntToString(set: Set<Int>): String{
+        return set.toString()
+    }
+
+    @TypeConverter
+    fun StringToSetInt(string: String): Set<Int>{
+        return string
+            .split(",")
+            .mapNotNull { it.toIntOrNull() }
+            .toSet()
+    }
 }
