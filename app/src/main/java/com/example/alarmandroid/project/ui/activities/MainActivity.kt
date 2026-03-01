@@ -3,7 +3,6 @@
 package com.example.alarmandroid.project.ui.activeties
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -50,7 +49,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -74,7 +72,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.graphics.Color
-import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonGroup
 import com.example.alarmandroid.project.data.local.dao.AlarmDao
 import com.example.alarmandroid.project.data.local.db.AppDatabase
@@ -82,7 +79,6 @@ import java.time.DayOfWeek
 import com.example.alarmandroid.project.data.local.entities.AlarmInfo
 import com.example.alarmandroid.project.data.models.AlarmType
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -92,6 +88,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val db = AppDatabase.getDatabase(applicationContext)
+        val alarmDao = db.alarmDao()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
@@ -111,8 +110,6 @@ class MainActivity : ComponentActivity() {
             AlarmAndroidTheme(isDarkMode) {
                 val coroutineScope = rememberCoroutineScope()
                 val context = LocalContext.current
-                val db = AppDatabase.getDatabase(context)
-                val alarmDao = db.alarmDao()
             AlarmSchedulerApp(alarmDao, coroutineScope, isDarkMode) {isDarkMode = it}
             }
         }
@@ -141,7 +138,7 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
-        val alarmList by alarmDao.getAllAlarms().collectAsState(initial = emptyList())
+            val alarmList by alarmDao.getAllAlarms().collectAsState(initial = emptyList())
 
             Scaffold(
                 floatingActionButton = {

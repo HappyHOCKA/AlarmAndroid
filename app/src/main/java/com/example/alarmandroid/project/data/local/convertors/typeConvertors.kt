@@ -20,11 +20,12 @@ class typeConvertors {
 
     @TypeConverter
     fun SetIntToString(set: Set<Int>): String{
-        return set.toString()
+        return set.joinToString(",")
     }
 
     @TypeConverter
     fun StringToSetInt(string: String): Set<Int>{
+        if (string.isEmpty()) return emptySet()
         return string
             .split(",")
             .mapNotNull { it.toIntOrNull() }
