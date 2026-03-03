@@ -19,10 +19,18 @@ interface AlarmDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAlarm(alarm: AlarmInfo)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAlarms(alarms: List<AlarmInfo>)
 
     @Update
-    suspend fun updateAlarm(alarm: AlarmInfo)
+    suspend fun updateAlarm(alarms: AlarmInfo)
+
+    @Update
+    suspend fun updateAlarms(alarms: List<AlarmInfo>)
 
     @Delete
     suspend fun deletaAlarm(alarm: AlarmInfo)
+
+    @Delete
+    suspend fun deletaAlarms(alarms: List<AlarmInfo>)
 }

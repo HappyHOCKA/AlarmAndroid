@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
@@ -78,6 +79,8 @@ import com.example.alarmandroid.project.data.local.db.AppDatabase
 import java.time.DayOfWeek
 import com.example.alarmandroid.project.data.local.entities.AlarmInfo
 import com.example.alarmandroid.project.data.models.AlarmType
+import com.example.alarmandroid.project.viewmodel.AlarmViewModel
+import com.example.alarmandroid.project.viewmodel.AlarmViewModelFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -91,6 +94,8 @@ class MainActivity : ComponentActivity() {
 
         val db = AppDatabase.getDatabase(applicationContext)
         val alarmDao = db.alarmDao()
+
+        val viewModel: AlarmViewModel by viewModels { AlarmViewModelFactory(alarmDao) }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
@@ -110,7 +115,7 @@ class MainActivity : ComponentActivity() {
             AlarmAndroidTheme(isDarkMode) {
                 val coroutineScope = rememberCoroutineScope()
                 val context = LocalContext.current
-            AlarmSchedulerApp(alarmDao, coroutineScope, isDarkMode) {isDarkMode = it}
+            AlarmSchedulerApp(alarmDao, coroutineScope, viewModel, isDarkMode) {isDarkMode = it}
             }
         }
     }
@@ -130,6 +135,7 @@ class MainActivity : ComponentActivity() {
     fun AlarmSchedulerApp(
         alarmDao: AlarmDao,
         coroutineScope: CoroutineScope,
+        viewModel: AlarmViewModel,
         isDarkMode: Boolean,
         onToggle: (Boolean) -> Unit
     ) {
@@ -138,7 +144,7 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
-            val alarmList by alarmDao.getAllAlarms().collectAsState(initial = emptyList())
+            val alarms by viewModel.allAlarms.collectAsState()
 
             Scaffold(
                 floatingActionButton = {
@@ -178,7 +184,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.padding(innerPadding)
                 ) {
                     composable("alarms") {
-                        AlarmSchedulerContent(innerPadding, coroutineScope, alarmDao,alarmList )
+                        AlarmSchedulerContent(innerPadding, coroutineScope, alarmDao,viewModel )
                     }
                     composable("scheduler") {
                         SchedulerScreen(innerPadding)
@@ -187,7 +193,7 @@ class MainActivity : ComponentActivity() {
                         SettingsScreen(innerPadding, isDarkMode, onToggle = onToggle)
                     }
                     composable("create_new_alarm") {
-                        ScrollableTimePicker(innerPadding, alarmList, navController, alarmDao, coroutineScope)
+                        ScrollableTimePicker(innerPadding, viewModel, navController, alarmDao, coroutineScope)
                     }
                 }
             }
@@ -195,14 +201,16 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun AlarmSchedulerContent(innerPadding: PaddingValues, coroutineScope: CoroutineScope, alarmDao: AlarmDao, alarmList: List<AlarmInfo>) {
+    fun AlarmSchedulerContent(innerPadding: PaddingValues, coroutineScope: CoroutineScope, alarmDao: AlarmDao, viewModel: AlarmViewModel) {
+        val alarms by viewModel.allAlarms.collectAsState()
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(alarmList) { alarm ->
+            items(alarms) { alarm ->
                 AlarmItem(alarm)
             }
         }
@@ -274,7 +282,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun ScrollableTimePicker(innerPadding: PaddingValues, alarmList: List<AlarmInfo>, navController: NavController, alarmDao: AlarmDao, coroutineScope: CoroutineScope) {
+    fun ScrollableTimePicker(innerPadding: PaddingValues, viewModel: AlarmViewModel, navController: NavController, alarmDao: AlarmDao, coroutineScope: CoroutineScope) {
         val context = LocalContext.current
         val scheduler = AlarmScheduler()
         val scrollState = rememberScrollState()
@@ -287,6 +295,7 @@ class MainActivity : ComponentActivity() {
         val selectedHour = hourState.firstVisibleItemIndex % 24
         val selectedMinute = minuteState.firstVisibleItemIndex % 60
         val dayOfWeek = mutableSetOf<DayOfWeek>()
+        val alarms by viewModel.allAlarms.collectAsState()
 
         var isAlarmSignalActive = true
         var isAlarmVibrationActive = true
@@ -459,7 +468,7 @@ Column(
                     date = date,
                 )
 
-                coroutineScope.launch { alarmDao.insertAlarm(newAlarm) }
+                viewModel.addAlarm(newAlarm)
 
                 navController.popBackStack()
             }
