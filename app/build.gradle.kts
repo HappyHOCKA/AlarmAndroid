@@ -72,5 +72,6 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-
+    implementation("com.squeraup.retrofit2:2.9.0")
+    implementation("com.squareup.retrofit2.2.9.0")
 }
