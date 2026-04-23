@@ -1,7 +1,5 @@
 @file:Suppress("DEPRECATION")
 
-val roomVersion = "2.8.4"
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -65,13 +63,16 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-    implementation("com.squeraup.retrofit2:2.9.0")
-    implementation("com.squareup.retrofit2.2.9.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.13.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.13.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 }
