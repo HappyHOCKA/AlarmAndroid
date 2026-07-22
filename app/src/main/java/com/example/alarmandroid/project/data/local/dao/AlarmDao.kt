@@ -18,19 +18,20 @@ interface AlarmDao {
     fun getAllAlarms(): Flow<List<AlarmInfo>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAlarm(alarm: AlarmInfo)
+    suspend fun insertAlarm(alarm: AlarmInfo): Unit
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAlarms(alarms: List<AlarmInfo>)
+    suspend fun insertAlarms(alarms: List<AlarmInfo>): Unit
 
     @Update
-    suspend fun updateAlarm(alarms: AlarmInfo)
+    suspend fun updateAlarm(alarms: AlarmInfo): Unit
 
     @Update
-    suspend fun updateAlarms(alarms: List<AlarmInfo>)
+    suspend fun updateAlarms(alarms: List<AlarmInfo>): Unit
 
     @Delete
-    suspend fun deletaAlarm(alarm: AlarmInfo)
+    suspend fun deleteAlarm(alarm: AlarmInfo): Unit
 
     @Delete
-    suspend fun deletaAlarms(alarms: List<AlarmInfo>)
+    suspend fun deleteAlarms(alarms: List<AlarmInfo>): Unit
 }

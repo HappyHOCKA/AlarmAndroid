@@ -6,7 +6,7 @@ import com.example.alarmandroid.project.data.models.AlarmType
 
 @Entity(tableName = "alarms")
 data class AlarmInfo(
-    @PrimaryKey(autoGenerate = true) val id: String? = "0",
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val time: String,
     val label: String = "",
     val repeatOnDayOfWeek: Set<Int> = emptySet(),//1 = Sunday, 7 = Saturday

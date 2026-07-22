@@ -12,7 +12,9 @@ import android.util.Log
 import com.example.alarmandroid.project.data.models.AlarmType
 import java.text.SimpleDateFormat
 import java.time.DayOfWeek
+import java.util.Date
 import java.util.Locale
+import kotlin.apply
 
 public class AlarmScheduler {
     companion object {
@@ -88,19 +90,37 @@ public class AlarmScheduler {
         }
     }
 
+    fun checkDate(targetTime: Calendar): String {
+        val currentTime = Calendar.getInstance()
+        val tomorrow = Calendar.getInstance().apply { add(Calendar.DATE, 1) }
+        val sdf = SimpleDateFormat("EEEE, d MMM", Locale.getDefault())
+        val isToday = currentTime.get(Calendar.YEAR) == targetTime.get(Calendar.YEAR) &&
+                currentTime.get(Calendar.DAY_OF_YEAR) == targetTime.get(Calendar.DAY_OF_YEAR)
+        val isTomorrow = tomorrow.get(Calendar.YEAR) == targetTime.get(Calendar.YEAR) &&
+                tomorrow.get(Calendar.DAY_OF_YEAR) == targetTime.get(Calendar.DAY_OF_YEAR)
+
+        return when{
+            isToday -> "Today - ${sdf.format(targetTime.time)}"
+            isTomorrow -> "Tomorrow - ${sdf.format(targetTime.time)}"
+            else -> "${sdf.format(targetTime.time)}"
+        }
+    }
+
+
     fun dateTransfer(timePickerStateInHours: Int, timePickerStateInMinute: Int): String {
+        val currentTime = Calendar.getInstance()
+
         var targetTime = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, timePickerStateInHours)
             set(Calendar.MINUTE, timePickerStateInMinute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
         }
-            val today = "Today-"
 
-            if (java.util.Calendar.getInstance().after(targetTime)) {
-                targetTime.add(java.util.Calendar.DATE, 1)
-                var today = "Tomorrow-"
-            }
-            val sdf = SimpleDateFormat("EEEE, d MMM", Locale.getDefault())
-
-            return today + sdf.format(targetTime.getTime())
+        if(targetTime.before(currentTime)){
+            targetTime.add(Calendar.DATE, 1)
+        }
+            var date = checkDate(targetTime)
+            return date
     }
 }

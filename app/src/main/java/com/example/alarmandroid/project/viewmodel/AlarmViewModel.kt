@@ -2,42 +2,36 @@ package com.example.alarmandroid.project.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.alarmandroid.project.api.RetrofitClient
+import com.example.alarmandroid.project.data.local.dao.AlarmDao
 import com.example.alarmandroid.project.data.local.entities.AlarmInfo
-import com.example.alarmandroid.project.data.models.AlarmType
-import com.example.alarmandroid.project.data.repository.Dto.AlarmDTO
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class AlarmViewModel : ViewModel() {
-    private val _alarms = MutableStateFlow<List<AlarmInfo>>(emptyList())
-    val allAlarms: StateFlow<List<AlarmInfo>> = _alarms
+class AlarmViewModel(private val dao: AlarmDao) : ViewModel() {
+    val allAlarms: StateFlow<List<AlarmInfo>> = dao.getAllAlarms()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
-    init {
-        fetchAlarms()
-    }
-
-    fun fetchAlarms(){
+    fun addAlarm(alarm: AlarmInfo) {
         viewModelScope.launch {
-            try {
-                val response = RetrofitClient.apiService.getAlarms()
-                _alarms.value = response
-            }catch (e: Exception){
+            dao.insertAlarm(alarm)
         }
     }
-    }
-    fun
 
-    fun AlarmDTO.toEntity(): AlarmInfo {
-        return AlarmInfo(
-            time = this.time,
-            isActive = this.isActive,
-            type = if (this.alarmType == "ONCE") AlarmType.ONCE else AlarmType.RECURRING,
-            id = this.id,
-            date = this.date,
-            )
+    fun deleteAlarm(alarm: AlarmInfo) {
+        viewModelScope.launch {
+            dao.deleteAlarm(alarm)
+        }
+    }
+
+    fun toggleAlarm(alarm: AlarmInfo, isActive: Boolean) {
+        viewModelScope.launch {
+            dao.updateAlarm(alarm.copy(isActive = isActive))
+        }
     }
 }
